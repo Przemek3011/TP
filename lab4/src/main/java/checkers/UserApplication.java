@@ -1,6 +1,7 @@
 package checkers;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -26,6 +27,18 @@ public class UserApplication {
 
     public static void main(String[] args) {
         int numberOfPlayers = initGame();
+        
+         new Thread(() -> {
+            try {
+                ServerSocket serverSocket = new ServerSocket(8000);
+                Server server = new Server(serverSocket);
+                server.startServer();
+            } catch (IOException e) {
+                System.err.println("Error starting the server: " + e.getMessage());
+            }
+        }).start();
+
+
         ArrayList<Thread> threads = new ArrayList<>(numberOfPlayers);
         for (int i = 0; i < numberOfPlayers; i++) {
             Thread clientThread = getThread(i, numberOfPlayers);

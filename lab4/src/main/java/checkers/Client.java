@@ -9,20 +9,23 @@ public class Client {
     private final Socket socket;
     private final Scanner in;
     private final PrintWriter out;
+    private Board board;
 
     public Client (String serverAddress, int port)
             throws IOException {
         this.socket = new Socket(serverAddress, port);
         this.in = new Scanner(socket.getInputStream());
         this.out = new PrintWriter(socket.getOutputStream(), true);
+        // Initialize the GUI
+        this.board = new Board(this);
     }
 
-    public void sendMessageToServer (String message) {
-        out.println(message);
+    public void sendMessageToServer(String message) {
+        out.println(message);  
     }
 
     public String receiveMessageFromServer () throws IOException {
-        return in.nextLine();
+        return in.nextLine();  
     }
 
     public void closeConnection() throws IOException {
@@ -33,27 +36,27 @@ public class Client {
         out.println(number);
     }
 
-    public void launch() {
-        try {
-            Scanner userScanner = new Scanner(System.in);
-            while(in.hasNextLine()) {
-                String line = receiveMessageFromServer();
-                if (line == null) break;
-                if (line.equalsIgnoreCase("make your move")) {
-                    System.out.println("Your Turn! Make your move.");
-                    String move = userScanner.nextLine();
-                    sendMessageToServer(move);
-                } else if (line.startsWith("update:")) {
-                    System.out.println("Board update:\n" + line.substring(7));
-                } else if (line.equalsIgnoreCase("game over")) {
-                    System.out.println("Game is over. The results are: " + receiveMessageFromServer());
-                } else {
-                    System.out.println(line);
+     public void launch() {
+        new Thread(() -> {
+            try {
+                while (in.hasNextLine()) {
+                    String line = receiveMessageFromServer();
+                    if (line == null) break;
+    
+                    if (line.equalsIgnoreCase("make your move")) {
+                        board.appendMessage("Your Turn! Make your move.");
+                    } else if (line.startsWith("update:")) {
+                        board.appendMessage("Board update:\n" + line.substring(7));
+                    } else if (line.equalsIgnoreCase("game over")) {
+                        board.appendMessage("Game is over. The results are: " + receiveMessageFromServer());
+                    } else {
+                        board.appendMessage(line); // Display any other messages from the server
+                    }
                 }
+                closeConnection();
+            } catch (IOException e) {
+                board.appendMessage("Connection lost.");
             }
-            closeConnection();
-        } catch (IOException e) {
-            System.out.println("Connection lost.");
-        }
+        }).start();
     }
 }
